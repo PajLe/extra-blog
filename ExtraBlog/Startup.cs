@@ -33,7 +33,11 @@ namespace ExtraBlog
                 configuration.RootPath = "ClientApp/dist";
             });
 
-            var client = new GraphClient(new Uri("http://localhost:7474/"), "neo4j", "neo4");
+            //var client = new GraphClient(new Uri("http://localhost:7474/"), "neo4j", "neo4");
+            string pass = Configuration.GetSection("Neo4JTestSettingsL").GetSection("Pass").Value;
+            string user = Configuration.GetSection("Neo4JTestSettingsL").GetSection("Username").Value;
+
+            var client = new GraphClient(new Uri(Configuration.GetConnectionString("Neo4JDB")), user, pass);
             Task task = Task.Run(async () => await client.ConnectAsync());
             task.Wait();
             services.AddSingleton<IGraphClient>(client);

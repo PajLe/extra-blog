@@ -37,70 +37,77 @@ namespace ExtraBlog.Controllers
         }
 
         // GET api/<CategoryController>/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetCategory(int id)
+        [HttpGet("{name}")]
+        public async Task<IActionResult> GetCategory(string name)
         {
             var result = await _context.Cypher.Match("(n:Category)")
-                                              .Where("NOT(n.isArchived) AND id(n)=" + id)
+                                              .Where("NOT(n.isArchived) AND n.name=~'" + name + "'")
                                               .Return<CategoryDTO>("n").ResultsAsync;
-            if (result == null) { return BadRequest("Category doesn't exist"); }
+            if (!result.Any()) { return BadRequest("Category doesn't exist"); }
 
             return new JsonResult(result);
         }
 
         // POST api/<CategoryController>
         [HttpPost("add")]
-        public async Task AddCategory([FromBody] string name)
+        public async Task<IActionResult> AddCategory([FromBody] string name)
         {
-            await _context.Cypher.Merge("(n:Category {name:'" + name + "', isArchived: false})").ExecuteWithoutResultsAsync();
+            //await _context.Cypher.Merge("(n:Category {name:'" + name + "', isArchived: false})").ExecuteWithoutResultsAsync();
+
+            var result = await _context.Cypher.Merge("(n:Category {name:'" + name + "', isArchived: false})")
+                                              .Return<CategoryDTO>("n")
+                                              .ResultsAsync;
+            if (!result.Any()) { return BadRequest(); }
+
+            return new JsonResult(result);
         }
 
         // PUT api/<CategoryController>/5
-        [HttpPut("archive/{id}")]
-        public async Task Archive(int id)
+        [HttpPut("archive/{name}")]
+        public async Task Archive(string name)
         {
             await _context.Cypher.Match("(n:Category)")
-                                 .Where("NOT(n.isArchived) AND id(n) =" + id)
+                                 .Where("NOT(n.isArchived) AND n.name =~ '" + name + "'")
                                  .Set("n.isArchived=" + true)
                                  .ExecuteWithoutResultsAsync();
         }
 
         // PUT api/<CategoryController>/5
-        [HttpPut("editname/{id}")]
-        public async Task EditName(int id, [FromBody] string newName)
-        {
-            await _context.Cypher.Match("(n:Category)")
-                                 .Where("NOT(n.isArchived) AND id(n) =" + id)
-                                 .Set("n.name=" + newName)
-                                 .ExecuteWithoutResultsAsync();
-        }
+        //[HttpPut("editname/{name}")]
+        //public async Task Editname(string name, [FromBody] string newname)
+        //{
+        //    await _context.Cypher.Match("(n:Category)")
+        //                         .Where("NOT(n.isArchived) AND n.name =" + name)
+        //                         .Set("n.name=" + newname)
+        //                         .ExecuteWithoutResultsAsync();
+        //}
 
         // PUT api/<CategoryController>/5
-        [HttpPut("addtag/{categoryid}")]
-        public async Task AddTagRelationship(int categoryId, [FromBody] int documentId)
+        [HttpPut("addtag/{categoryname}")]
+        public async Task AddTagRelationship(string categoryname, [FromBody] string documentname)
         {
             await _context.Cypher.Match("(n:Category), (d:Document)")
-                                 .Where($"NOT(n.isArchived AND d.isArchived) AND id(n) = {categoryId} AND id(d) = {documentId}")
+                                 .Where($"NOT(n.isArchived AND d.isArchived) AND n.name =~ '{categoryname}' AND d.name =~ '{documentname}'")
                                  .Merge("(d)-[r: TAG]->(n)")
                                  .ExecuteWithoutResultsAsync();
         }
 
         // PUT api/<CategoryController>/5
-        [HttpPut("addinterest/{categoryid}")]
-        public async Task AddInterestRelationship(int categoryId, [FromBody] int userId)
+        [HttpPut("addinterest/{categoryname}")]
+        public async Task AddInterestRelationship(string categoryname, [FromBody] string username)
         {
             await _context.Cypher.Match("(n:Category), (d:User)")
-                                 .Where($"NOT(n.isArchived AND d.isArchived) AND id(n) = {categoryId} AND id(d) = {userId}")
+                                 .Where($"NOT(n.isArchived AND d.isArchived) AND n.name =~ '{categoryname}' AND d.name =~ '{username}'")
                                  .Merge("(d)-[r: INTERESTED_IN]->(n)")
                                  .ExecuteWithoutResultsAsync();
         }
 
         // DELETE api/<CategoryController>/5
-        [HttpDelete("{id}")]
-        public async Task Delete(int id)
+        [HttpDelete("{name}")]
+        public async Task Delete(int name)
         {
             await _context.Cypher.Match("(n:Category)")
-                                 .Where("id(n) =" + id)
+                                 .Where("n.name =~'" + name + "'")
                                  .DetachDelete("n")
                                  .ExecuteWithoutResultsAsync();
         }
