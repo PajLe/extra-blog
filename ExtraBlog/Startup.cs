@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Neo4jClient;
+using System;
+using System.Threading.Tasks;
 
 namespace ExtraBlog
 {
@@ -20,12 +23,20 @@ namespace ExtraBlog
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddControllers();
+            
+
             services.AddControllersWithViews();
             // In production, the Angular files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
             {
                 configuration.RootPath = "ClientApp/dist";
             });
+
+            var client = new GraphClient(new Uri("http://localhost:7474/"), "neo4j", "neo4");
+            Task task = Task.Run(async () => await client.ConnectAsync());
+            task.Wait();
+            services.AddSingleton<IGraphClient>(client);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
