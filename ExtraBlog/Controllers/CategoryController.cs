@@ -97,7 +97,7 @@ namespace ExtraBlog.Controllers
         public async Task AddInterestRelationship(string categoryname, [FromBody] string username)
         {
             await _context.Cypher.Match("(n:Category), (d:User)")
-                                 .Where($"NOT(n.isArchived AND d.isArchived) AND n.name =~ '{categoryname}' AND d.name =~ '{username}'")
+                                 .Where($"NOT(n.isArchived AND d.isArchived) AND n.name =~ '{categoryname}' AND d.Username =~ '{username}'")
                                  .Merge("(d)-[r: INTERESTED_IN]->(n)")
                                  .ExecuteWithoutResultsAsync();
         }
