@@ -27,7 +27,6 @@ namespace ExtraBlog.Controllers
 
         //GET api/<DocumentController>
         [HttpGet]
-
         public async Task<IActionResult> GetAllDocuments()
         {
             return new JsonResult(await _context.Cypher.Match("(n:Document)")
@@ -48,21 +47,25 @@ namespace ExtraBlog.Controllers
             return new JsonResult(result);
         }
 		
-		public void parseArgs(ref string[] pomPic, ref string[] pomPar)
+		private void parseArgs(string[] pomPic, string[] pomPar, out string pic, out string par)
 		{
 			string resPic = "", resPar = "";
 			for (int i = 0; i < pomPic.Length; i++)
 			{
+                if (i != 0) { resPic += ","; }
+                resPic += " ";
 				resPic += ("'" + pomPic[i] + "'");
 			}
 			
 			for (int i = 0; i < pomPar.Length; i++)
 			{
-				resPic += ("'" + pomPar[i] + "'");
-			}
-			
-			pomPic = resPic;
-			pomPar = resPar;
+                if (i != 0) { resPar += ","; }
+                resPar += " ";
+                resPar += ("'" + pomPar[i] + "'");
+            }
+
+            pic = resPic;
+            par = resPar;
 		}
 
         //POST api/<DocumentController>
@@ -71,10 +74,11 @@ namespace ExtraBlog.Controllers
         {
             //await _context.Cypher.Merge("(n:Document {name: '" + name + "', isArchived: false})").ExecuteWithoutResultsAsync();
 			
-			string pomPic = dto.Pictures;
-			string pomPar = dto.Paragraph;
-			parseArgs(ref pomPic, ref pomPar);
-            var result = await _context.Cypher.Merge("(n:Document {name:'" + dto.name + "', isArchived: false}, Pictures:[ " + pomPic + "]" + "Paragraphs:[" + pomPar + "]" );
+			string[] pomPic = dto.Pictures;
+			string[] pomPar = dto.Paragraphs;
+			parseArgs(pomPic, pomPar, out string pic, out string par);
+            string query = "(n:Document {name:'" + dto.name + "', isArchived: false, Pictures:[ " + pic + "], Paragraphs:[" + par + "]})";
+            var result = await _context.Cypher.Merge(query)
                                               .Return<DocumentDTO>("n")
                                               .ResultsAsync;
             if (!result.Any()) { return BadRequest(); }
