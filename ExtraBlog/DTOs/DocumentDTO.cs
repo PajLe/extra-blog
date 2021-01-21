@@ -13,6 +13,8 @@ namespace ExtraBlog.DTOs
 		
 		public string[] Paragraphs { get; set; }
 		
-		public string[] Pictures { get; set;}
+		public string[] Pictures { get; set; }
+
+        public string CreatedBy { get; set; }
     }
 }

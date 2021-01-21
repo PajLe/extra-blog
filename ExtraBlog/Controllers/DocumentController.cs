@@ -31,7 +31,7 @@ namespace ExtraBlog.Controllers
         {
             return new JsonResult(await _context.Cypher.Match("(n:Document)")
                                                        .Where("NOT(n.isArchived)")
-                                                       .Return<DocumentDTO>("n").ResultsAsync);
+                                                       .Return<Document>("n").ResultsAsync);
         }
 
         //GET api/<DocumentController>
@@ -41,7 +41,7 @@ namespace ExtraBlog.Controllers
         {
             var result = await _context.Cypher.Match("(n:Document)")
                                               .Where("NOT(n.isArchived) AND n.name=~'" + name + "'")
-                                              .Return<DocumentDTO>("n").ResultsAsync;
+                                              .Return<Document>("n").ResultsAsync;
             if (!result.Any()) { return BadRequest("Document doesn't exist"); }
 
             return new JsonResult(result);
@@ -77,9 +77,9 @@ namespace ExtraBlog.Controllers
 			string[] pomPic = dto.Pictures;
 			string[] pomPar = dto.Paragraphs;
 			parseArgs(pomPic, pomPar, out string pic, out string par);
-            string query = "(n:Document {name:'" + dto.name + "', isArchived: false, Pictures:[ " + pic + "], Paragraphs:[" + par + "]})";
+            string query = "(n:Document {name:'" + dto.name + "', isArchived: false, Pictures:[ " + pic + "], Paragraphs:[" + par + "], CreatedBy:'" + dto.CreatedBy + "', Created: date()})";
             var result = await _context.Cypher.Merge(query)
-                                              .Return<DocumentDTO>("n")
+                                              .Return<Document>("n")
                                               .ResultsAsync;
             if (!result.Any()) { return BadRequest(); }
 

@@ -16,5 +16,9 @@ namespace ExtraBlog.Models
 		public string[] Paragraphs { get; set; }
 		
 		public string[] Pictures { get; set; }
+
+        public string CreatedBy { get; set; }
+
+        public DateTime Created { get; set; }
     }
 }
