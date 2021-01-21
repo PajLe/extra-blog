@@ -46,27 +46,6 @@ namespace ExtraBlog.Controllers
 
             return new JsonResult(result);
         }
-		
-		private void parseArgs(string[] pomPic, string[] pomPar, out string pic, out string par)
-		{
-			string resPic = "", resPar = "";
-			for (int i = 0; i < pomPic.Length; i++)
-			{
-                if (i != 0) { resPic += ","; }
-                resPic += " ";
-				resPic += ("'" + pomPic[i] + "'");
-			}
-			
-			for (int i = 0; i < pomPar.Length; i++)
-			{
-                if (i != 0) { resPar += ","; }
-                resPar += " ";
-                resPar += ("'" + pomPar[i] + "'");
-            }
-
-            pic = resPic;
-            par = resPar;
-		}
 
         //POST api/<DocumentController>
         [HttpPost("add")]
@@ -107,13 +86,35 @@ namespace ExtraBlog.Controllers
         //}
 
         //PUT api/<DocumentController>
-        [HttpPut("addinterest/{documentname}")]
+        [HttpPut("addlike/{documentname}")]
 
-        public async Task AddInterestRelationship(string documentname, [FromBody] string username)
+        public async Task AddLikeRelationship(string documentname, [FromBody] string username)
         {
             await _context.Cypher.Match("(n:Document), (d:User)")
-                                 .Where($"NOT(n.isArchived AND d.isArchived) AND n.name =~ '{documentname}' AND d.name =~ '{username}'")
-                                 .Merge("(d)-[r: INTERESTED_IN]->(n)")
+                                 .Where($"NOT(n.isArchived AND d.isArchived) AND n.name =~ '{documentname}' AND d.Username =~ '{username}'")
+                                 .Merge("(d)-[r: LIKES]->(n)")
+                                 .ExecuteWithoutResultsAsync();
+        }
+
+        [HttpGet("likes/{name}")]
+        public async Task<IActionResult> GetDocumentLikes(string name)
+        {
+            var result = await _context.Cypher.Match($"(n:Document {{name: '{name}'}})<-[r:LIKES]-(u:User)")
+                                              .Return<int>("count(*)").ResultsAsync;
+            if (!result.Any()) { return BadRequest("Document doesn't exist"); }
+
+            return new JsonResult(result);
+        }
+
+        //PUT api/<DocumentController>
+        [HttpPut("tags/{documentname}")]
+
+        public async Task AddTags(string documentname, [FromBody] string[] category)
+        {
+            parseArg(category, out string categories);
+            await _context.Cypher.Match("(d:Document), (c:Category)")
+                                 .Where($"NOT(d.isArchived AND c.isArchived) AND d.name =~ '{documentname}' AND c.name IN [{categories}]")
+                                 .Merge("(d)-[r: TAG]->(n)")
                                  .ExecuteWithoutResultsAsync();
         }
 
@@ -128,7 +129,39 @@ namespace ExtraBlog.Controllers
                                  .ExecuteWithoutResultsAsync();
         }
 
+        private void parseArgs(string[] pomPic, string[] pomPar, out string pic, out string par)
+        {
+            string resPic = "", resPar = "";
+            for (int i = 0; i < pomPic.Length; i++)
+            {
+                if (i != 0) { resPic += ","; }
+                resPic += " ";
+                resPic += ("'" + pomPic[i] + "'");
+            }
 
+            for (int i = 0; i < pomPar.Length; i++)
+            {
+                if (i != 0) { resPar += ","; }
+                resPar += " ";
+                resPar += ("'" + pomPar[i] + "'");
+            }
+
+            pic = resPic;
+            par = resPar;
+        }
+
+        private void parseArg(string[] pom, out string res)
+        {
+            string resPic = "";
+            for (int i = 0; i < pom.Length; i++)
+            {
+                if (i != 0) { resPic += ","; }
+                resPic += " ";
+                resPic += ("'" + pom[i] + "'");
+            }
+
+            res = resPic;
+        }
 
     }
 }
