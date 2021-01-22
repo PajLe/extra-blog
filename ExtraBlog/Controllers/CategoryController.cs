@@ -43,21 +43,31 @@ namespace ExtraBlog.Controllers
             var result = await _context.Cypher.Match("(n:Category)")
                                               .Where("NOT(n.isArchived) AND n.name=~'" + name + "'")
                                               .Return<CategoryDTO>("n").ResultsAsync;
-            if (!result.Any()) { return BadRequest("Category doesn't exist"); }
+
+            return new JsonResult(result);
+        }
+
+        [HttpGet("trending")]
+        public async Task<IActionResult> GetTrendingCategory(string name)
+        {
+            var result = await _context.Cypher.Match("(u:User)-[r: INTERESTED_IN]->(n:Category)")
+                                              .With("n, COUNT(r) AS interests")
+                                              .OrderBy("interests DESC")
+                                              .Limit(10)
+                                              .Return<CategoryDTO>("n").ResultsAsync;
 
             return new JsonResult(result);
         }
 
         // POST api/<CategoryController>
-        [HttpPost("add")]
-        public async Task<IActionResult> AddCategory([FromBody] string name)
+        [HttpPost("add/{name}")]
+        public async Task<IActionResult> AddCategory(string name)
         {
             //await _context.Cypher.Merge("(n:Category {name:'" + name + "', isArchived: false})").ExecuteWithoutResultsAsync();
 
             var result = await _context.Cypher.Merge("(n:Category {name:'" + name + "', isArchived: false})")
                                               .Return<CategoryDTO>("n")
                                               .ResultsAsync;
-            if (!result.Any()) { return BadRequest(); }
 
             return new JsonResult(result);
         }
@@ -93,8 +103,8 @@ namespace ExtraBlog.Controllers
         }
 
         // PUT api/<CategoryController>/5
-        [HttpPut("addinterest/{categoryname}")]
-        public async Task AddInterestRelationship(string categoryname, [FromBody] string username)
+        [HttpPut("addinterest/{categoryname}/{username}")]
+        public async Task AddInterestRelationship(string categoryname, string username)
         {
             await _context.Cypher.Match("(n:Category), (d:User)")
                                  .Where($"NOT(n.isArchived AND d.isArchived) AND n.name =~ '{categoryname}' AND d.Username =~ '{username}'")

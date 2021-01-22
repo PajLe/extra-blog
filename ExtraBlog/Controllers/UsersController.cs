@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using ExtraBlog.DTOs;
 using Neo4jClient;
 using ExtraBlog.Models;
-using System.Collections.ObjectModel;
-using System.Collections.Generic;
 
 namespace ExtraBlog.Controllers
 {
@@ -20,24 +18,25 @@ namespace ExtraBlog.Controllers
             _context = graphClient;
         }
 
-        [HttpGet("newsfollow/{username}")]
-        public async Task<IActionResult> GetNewsFollowing(string username)
+        [HttpGet("newsfollow/{username}/{skip}")]
+        public async Task<IActionResult> GetNewsFollowing(string username, int skip)
         {
             var users = await _context.Cypher.Match("(f:User)<-[:FOLLOW]-(n:User), (d:Document{isArchived: false})")
                                              .Where($"NOT(n.isArchived AND f.isArchived) AND n.Username=~'{username}' AND f.Username=~ d.CreatedBy")
                                              .Return<Document>("d")
                                              .OrderBy("d.Created")
-                                             .Limit(10)
+                                             .Skip(skip)
+                                             .Limit(20)
                                              .ResultsAsync;
 
             return new JsonResult(users);
         }
 
-        [HttpGet("news/{username}")]
-        public async Task<IActionResult> GetNewsFeed(string username)
+        [HttpGet("news/{username}/{skip}")]
+        public async Task<IActionResult> GetNewsFeed(string username, int skip)
         {
-            return new JsonResult(await _context.Cypher.Match($"(a:User{{Username: '{username}'}})-[:INTERESTED_IN]->(res:Category)<-[:TAG]-(b:Document)")
-                                                       //.Where($"NOT(b.isArchived AND c.isArchived AND b.CreatedBy =~ '{username}')")
+            var news = await _context.Cypher.Match($"(a:User{{Username: '{username}'}})-[:INTERESTED_IN]->(res:Category)<-[:TAG]-(b:Document)")
+                                                       .Where($"NOT(b.isArchived OR res.isArchived) AND NOT(b.CreatedBy =~ '{username}') AND NOT((a)-[:SEEN]->(b))")
                                                        .With("b.name AS name, b.CreatedBy AS creator, b.Pictures AS pictures, b.Paragraphs AS paragraphs, COUNT(res) AS interest1")
                                                        //.Return<Document>("b, interest1")
                                                        .Return((name, creator, pictures, paragraphs, interest1)=> new SimpleNewsFeedDTO { 
@@ -47,8 +46,10 @@ namespace ExtraBlog.Controllers
                                                                                                                                            , Paragraphs = paragraphs.As<string[]>()
                                                                                                                                            , Interest = interest1.As<int>() })  
                                                        .OrderBy("interest1 DESC")
-                                                       .Limit(10)
-                                                       .ResultsAsync);
+                                                       .Skip(skip)
+                                                       .Limit(20)
+                                                       .ResultsAsync;
+            return new JsonResult(news);
         }
 
         [HttpGet("following/{username}")]

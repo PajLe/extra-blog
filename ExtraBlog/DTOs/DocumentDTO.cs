@@ -10,10 +10,12 @@ namespace ExtraBlog.DTOs
         //public int Id { get; set; }
 
         public string name { get; set; }
-		
-		public string[] Paragraphs { get; set; }
-		
-		public string[] Pictures { get; set; }
+
+        public string[] Paragraphs { get; set; }
+
+        public string[] Pictures { get; set; }
+
+        public string[] Categories { get; set; }
 
         public string CreatedBy { get; set; }
     }

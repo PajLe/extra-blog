@@ -26,7 +26,7 @@ namespace ExtraBlog.Controllers
         }
 
         //GET api/<DocumentController>
-        [HttpGet("all")]
+        [HttpGet]
         public async Task<IActionResult> GetAllDocuments()
         {
             return new JsonResult(await _context.Cypher.Match("(n:Document)")
@@ -42,7 +42,17 @@ namespace ExtraBlog.Controllers
             var result = await _context.Cypher.Match("(n:Document)")
                                               .Where("NOT(n.isArchived) AND n.name=~'" + name + "'")
                                               .Return<Document>("n").ResultsAsync;
-            if (!result.Any()) { return BadRequest("Document doesn't exist"); }
+
+            return new JsonResult(result);
+        }
+
+        [HttpGet("my/{name}")]
+
+        public async Task<IActionResult> GetMyDocuments(string name)
+        {
+            var result = await _context.Cypher.Match("(n:Document)")
+                                              .Where("NOT(n.isArchived) AND exists(n.CreatedBy) AND n.CreatedBy=~'" + name + "'")
+                                              .Return<Document>("n").ResultsAsync;
 
             return new JsonResult(result);
         }
@@ -52,15 +62,20 @@ namespace ExtraBlog.Controllers
         public async Task<IActionResult> AddDocument([FromBody] DocumentDTO dto)
         {
             //await _context.Cypher.Merge("(n:Document {name: '" + name + "', isArchived: false})").ExecuteWithoutResultsAsync();
-			
-			string[] pomPic = dto.Pictures;
-			string[] pomPar = dto.Paragraphs;
-			parseArgs(pomPic, pomPar, out string pic, out string par);
+
+            string[] pomPic = dto.Pictures;
+            string[] pomPar = dto.Paragraphs;
+            parseArgs(pomPic, pomPar, out string pic, out string par);
             string query = "(n:Document {name:'" + dto.name + "', isArchived: false, Pictures:[ " + pic + "], Paragraphs:[" + par + "], CreatedBy:'" + dto.CreatedBy + "', Created: date()})";
             var result = await _context.Cypher.Merge(query)
                                               .Return<Document>("n")
                                               .ResultsAsync;
-            if (!result.Any()) { return BadRequest(); }
+
+            parseArg(dto.Categories, out string categories);
+            await _context.Cypher.Match("(d:Document), (c:Category)")
+                    .Where($"NOT(d.isArchived AND c.isArchived) AND d.name =~ '{dto.name}' AND c.name IN [{categories}]")
+                    .Merge("(d)-[r: TAG]->(c)")
+                    .ExecuteWithoutResultsAsync();
 
             return new JsonResult(result);
         }
@@ -76,14 +91,27 @@ namespace ExtraBlog.Controllers
         }
 
         // PUT api/<DocumentController>
-        //[HttpPut("editname/{name}")]
-        //public async Task Editname(string name, [FromBody] string newname)
-        //{
-        //    await _context.Cypher.Match("(n:Document)")
-        //                         .Where("NOT(n.isArchived) AND n.name =" + name)
-        //                         .Set("n.name=" + newname)
-        //                         .ExecuteWithoutResultsAsync();
-        //}
+        [HttpPut("editname/{name}")]
+        public async Task Editname(string name, [FromBody] string newname)
+        {
+            await _context.Cypher.Match("(n:Document)")
+                                 .Where("NOT(n.isArchived) AND n.name =" + name)
+                                 .Set("n.name=" + newname)
+                                 .ExecuteWithoutResultsAsync();
+        }
+
+        // PUT api/<DocumentController>
+        [HttpPut("edit/{name}")]
+        public async Task EditDocument(string name, [FromBody] DocumentEditDTO edit)
+        {
+            parseArg(edit.Paragraphs, out string par);
+            parseArg(edit.Pictures, out string pic);
+            await _context.Cypher.Match("(n:Document)")
+                                 .Where("NOT(n.isArchived) AND n.name =~ '" + name + "'")
+                                 .Set("n.Paragraphs=[" + par + "]")
+                                 .Set("n.Pictures=[" + pic + "]")
+                                 .ExecuteWithoutResultsAsync();
+        }
 
         //PUT api/<DocumentController>
         [HttpPut("addlike/{documentname}")]
@@ -101,7 +129,6 @@ namespace ExtraBlog.Controllers
         {
             var result = await _context.Cypher.Match($"(n:Document {{name: '{name}'}})<-[r:LIKES]-(u:User)")
                                               .Return<int>("count(*)").ResultsAsync;
-            if (!result.Any()) { return BadRequest("Document doesn't exist"); }
 
             return new JsonResult(result);
         }
@@ -123,10 +150,30 @@ namespace ExtraBlog.Controllers
 
         public async Task Delete(string name)
         {
-            await _context.Cypher.Match("n:Document")
+            await _context.Cypher.Match("(n:Document)")
                                  .Where("n.name =~'" + name + "'")
                                  .DetachDelete("n")
                                  .ExecuteWithoutResultsAsync();
+        }
+
+        [HttpPut("addseen/{documentname}/{username}")]
+
+        public async Task AddSeenRelationship(string documentname, string username)
+        {
+            await _context.Cypher.Match("(n:Document{name:'" + documentname + "'}), (d:User{Username:'" + username + "'})")
+                                 .Where("NOT(n.isArchived)")
+                                 .Merge("(d)-[r: SEEN]->(n)")
+                                 .ExecuteWithoutResultsAsync();
+        }
+
+        [HttpGet("seens/{name}")]
+        public async Task<IActionResult> GetDocumentSeens(string name)
+        {
+            var result = await _context.Cypher.Match($"(n:Document {{name: '{name}'}})<-[r:SEEN]-(u:User)")
+                                              .Return<int>("count(*)").ResultsAsync;
+            if (!result.Any()) { return BadRequest("Document doesn't exist"); }
+
+            return new JsonResult(result);
         }
 
         private void parseArgs(string[] pomPic, string[] pomPar, out string pic, out string par)

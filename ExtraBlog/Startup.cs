@@ -1,13 +1,16 @@
+using System;
+using System.Text;
+using System.Threading.Tasks;
+using ExtraBlog.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
+using Neo4j.Driver;
 using Neo4jClient;
-using System;
-using System.Threading.Tasks;
 
 namespace ExtraBlog
 {
@@ -20,70 +23,62 @@ namespace ExtraBlog
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
-            
-
-            services.AddControllersWithViews();
-            // In production, the Angular files will be served from this directory
-            services.AddSpaStaticFiles(configuration =>
+            services.AddControllers().AddNewtonsoftJson(options =>
             {
-                configuration.RootPath = "ClientApp/dist";
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             });
 
-            //var client = new GraphClient(new Uri("http://localhost:7474/"), "neo4j", "neo4");
-            string pass = Configuration.GetSection("Neo4JTestSettingsL").GetSection("Pass").Value;
-            string user = Configuration.GetSection("Neo4JTestSettingsL").GetSection("Username").Value;
+            services.AddCors(options => options.AddPolicy("CorsPolicy", builder =>
+            builder
+            .WithOrigins("http://localhost:4200", "http://localhost:4201")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials()
+            ));
 
-            var client = new GraphClient(new Uri(Configuration.GetConnectionString("Neo4JDB")), user, pass);
-            Task task = Task.Run(async () => await client.ConnectAsync());
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+                   .AddJwtBearer(options =>
+                   {
+                       options.TokenValidationParameters = new TokenValidationParameters
+                       {
+                           ValidateIssuerSigningKey = true,
+                           IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration.GetSection("AppSettings:Secret").Value)),
+                           ValidateIssuer = false,
+                           ValidateAudience = false
+                       };
+                   });
+
+            var neo4jClient = new GraphClient(new Uri("http://localhost:7474"), "neo4j", "neo4");
+            Task task = Task.Run(async () => await neo4jClient.ConnectAsync());
             task.Wait();
-            services.AddSingleton<IGraphClient>(client);
+            
+            services.AddSingleton<IGraphClient>(neo4jClient);
+            services.AddScoped<IAuthentication, Authentication>();
         }
-
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
-            else
-            {
-                app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
-
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
-            if (!env.IsDevelopment())
-            {
-                app.UseSpaStaticFiles();
-            }
 
             app.UseRouting();
 
+            app.UseCors("CorsPolicy");
+
+            app.UseAuthentication();
+
+            app.UseAuthorization();
+
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller}/{action=Index}/{id?}");
-            });
-
-            app.UseSpa(spa =>
-            {
-                // To learn more about options for serving an Angular SPA from ASP.NET Core,
-                // see https://go.microsoft.com/fwlink/?linkid=864501
-
-                spa.Options.SourcePath = "ClientApp";
-
-                if (env.IsDevelopment())
-                {
-                    spa.UseAngularCliServer(npmScript: "start");
-                }
+                endpoints.MapControllers();
             });
         }
     }
