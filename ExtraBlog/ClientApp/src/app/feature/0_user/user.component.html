@@ -1,0 +1,10 @@
+<app-sidebar #nav [view]="view"></app-sidebar>
+<div class="backdrop"
+	 [ngClass]="{'backdrop-active': view !== ViewType.DESKTOP && (nav.expanded || menu.expanded)}"
+	 [ngStyle]="{'z-index' : nav.expanded ? '100' : '1000'}"
+	 (click)="nav.expanded ? nav.close() : menu.close()">
+</div>
+<div class="page-content" [ngClass]="{'page-content-nav-hidden': view === ViewType.MOBILE}">
+	<app-user-menu #menu [view]="view" (expandMenu)="nav.open()"></app-user-menu>
+	<router-outlet></router-outlet>
+</div>

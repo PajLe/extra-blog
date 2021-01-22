@@ -1,0 +1,69 @@
+<div class="nav-left" [ngClass]="{'nav-expanded' : expanded, 'nav-hidden': view === ViewType.MOBILE}"
+    (mouseenter)="view === ViewType.DESKTOP ? expanded = true : undefined"
+    (mouseleave)="view === ViewType.DESKTOP ? expanded = false : undefined">
+
+    <div [ngClass]="view === ViewType.DESKTOP ? 'nav-logo-header': 'nav-button-header'">
+        <a *ngIf="view === ViewType.DESKTOP" class="nav-logo"></a>
+        <div *ngIf="expanded && view !== ViewType.DESKTOP" class="nav-title">EXPLORE THE WORLD</div>
+        <div *ngIf="view === ViewType.TABLET" [ngClass]="expanded ? 'nav-arrow' : 'nav-hamburger'"
+            (click)="expanded = !expanded">
+            <span class="line"></span>
+            <span class="line"></span>
+            <span class="line"></span>
+        </div>
+        <div *ngIf="expanded && view === ViewType.MOBILE" class="nav-button" (click)="expanded = false">
+            <i class="fal fa-times"></i>
+        </div>
+    </div>
+
+    <ng-template #navItem let-route="route">
+		<div class="nav-item" (click)="route.categories.length > 0 ? menuToggle(route) : undefined">
+			<div class="nav-icon">
+				<ng-template [ngIf]="route.icon">
+					<div class="nav-icon-container" style="width: 25px">
+						<i [class]="route.icon"></i>
+					</div>
+				</ng-template>
+				<ng-template [ngIf]="route.svg">
+					<svg class="nav-icon-container">
+						<use [attr.xlink:href]="route.svg"></use>
+					</svg>
+				</ng-template>
+				<div *ngIf="route.badge" class="badge">{{route.badge}}</div>
+			</div>
+			<div class="nav-text noselect">
+				<span [innerHTML]="route.title"></span>
+				<span [innerHTML]="route.subtitle"></span>
+			</div>
+			<div *ngIf="route.categories.length > 0" class="nav-chevron">
+				<i class="fal fa-chevron-right" [ngClass]="{'rotate90': opened === route.openId}"></i>
+			</div>
+			<div *ngIf="route.beta" class="beta-tag">Beta</div>
+			<div *ngIf="route.new" class="beta-tag" style="background:#49E095">New</div>
+		</div>
+		<ng-template *ngFor="let r2 of route.categories"
+					 [ngTemplateOutlet]="navItemInternal"
+					 [ngTemplateOutletContext]="{route: r2, display: true, height: expanded && opened === route.openId ? '50px' : '0px'}">
+		</ng-template>
+	</ng-template>
+
+    <ng-template #navItemInternal let-route="route" let-display="display" let-height="height">
+		<div class="nav-list-item"
+			 customLink
+			 [targetRoute]="route.target"
+			 [ngStyle]="{'display': display ? 'block' : 'none', 'height': route.categories.length === 0 ? height : 'auto'}"
+			 (mouseenter)="view === ViewType.DESKTOP ? expanded = true : undefined"
+			 (changeExpanded)="route.target ? expanded = false : undefined">
+			<ng-template [ngTemplateOutlet]="navItem"
+						 [ngTemplateOutletContext]="{route: route}">
+			</ng-template>
+		</div>
+	</ng-template>
+    
+    <div class="nav-list">
+		<ng-template *ngFor="let route of config.menuRoutes"
+					 [ngTemplateOutlet]="navItemInternal"
+					 [ngTemplateOutletContext]="{route: route, display: menuRoutes}">
+		</ng-template>
+	</div>
+</div>

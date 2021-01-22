@@ -1,0 +1,30 @@
+<div style="background-color: white; padding: 20px; min-width: 500px !important; height: 600px">
+    <h1 *ngIf="!data.category" mat-dialog-title>Add a document</h1>
+    <h1 *ngIf="data.category" mat-dialog-title>Add a category</h1>
+    <div mat-dialog-content style="display: flex; flex-direction: column;">
+        <mat-form-field [ngStyle]="{width: data.category ? '350px' : '950px'}" style="width: 350px">
+            <mat-label>Name</mat-label>
+            <input matInput [disabled]="data.edit" [(ngModel)]="data.name">
+        </mat-form-field>
+        <mat-form-field style="width: 950px; margin-top: 20px;" *ngIf="!data.category">
+            <mat-label>Text</mat-label>
+            <textarea style="height: 250px;" matInput [(ngModel)]="data.paragraphs"></textarea>
+        </mat-form-field>
+        <mat-form-field style="width: 950px; margin-top: 300px;" *ngIf="!data.category">
+            <mat-label>Images</mat-label>
+            <input matInput [(ngModel)]="data.pictures">
+        </mat-form-field>
+        <mat-form-field *ngIf="!data.category && !data.edit" style="margin-top: 10px" appearance="fill">
+            <mat-label>Categories</mat-label>
+            <mat-select [(ngModel)]="data.categories" multiple>
+                <mat-option *ngFor="let category of (categories$ | async)" [value]="category.name">
+                    {{category.name}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+    <div mat-dialog-actions>
+        <button mat-raised-button (click)="onNoClick()">No Thanks</button>
+        <button mat-raised-button [mat-dialog-close]="data" cdkFocusInitial>Ok</button>
+    </div>
+</div>

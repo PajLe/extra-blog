@@ -1,0 +1,22 @@
+<div class="center-form">
+    <div class="form">
+        &nbsp; <img width="300px" height="70px;" src="../../../../assets/large.png">
+        <span style="color: #337AB7">Dobrodosli u Extra Blog najbolji blog na ovoj planeti :)</span>
+        <br />
+        <br />
+        <mat-form-field appearance="outline">
+            <mat-label>Username</mat-label>
+            <input style="height: 30px" matInput [(ngModel)]="user.username">
+        </mat-form-field>
+        <br />
+        <mat-form-field appearance="outline">
+            <mat-label>Password</mat-label>
+            <input type="password" style="height: 30px" matInput [(ngModel)]="user.password">
+        </mat-form-field>
+
+        <div style="display: flex; justify-content: space-around; margin-top: 30px">
+            <button mat-raised-button (click)="sendRequest(true)" color="primary">Login</button>
+            <button mat-raised-button (click)="sendRequest(false)" color="primary">Register</button>
+        </div>
+    </div>
+</div>

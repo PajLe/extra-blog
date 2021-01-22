@@ -1,0 +1,55 @@
+.recomended-documents {}
+
+.my-documents {
+    width: 99%;
+    height: 275px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.my-categories {
+    margin-bottom: 10px;
+    width: 99%;
+    height: 275px;
+    margin-right: 5px;
+    ;
+}
+
+.explore-categories {
+    width: 99%;
+    height: 275px;
+    margin-bottom: 10px;
+    margin-right: 5px;
+    ;
+}
+
+.explore-documents {
+    width: 99%;
+    height: 275px;
+    margin-bottom: 10px;
+    margin-right: 5px;
+    ;
+}
+
+.example-card {
+    margin-right: 10px;
+    margin-top: 10px;
+    width: 150px;
+    height: 150px;
+    background-color: #337AB7;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.example-card {
+    max-width: 400px;
+}
+
+.document-display {
+    border: 1px solid #337AB7;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+}

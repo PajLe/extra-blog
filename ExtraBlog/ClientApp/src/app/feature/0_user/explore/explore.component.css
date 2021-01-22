@@ -1,0 +1,9 @@
+.main-div {
+    padding: 15px; 
+    background-color: white; 
+    margin: 5px; 
+    border-radius: 5px; 
+    border: 1px solid #E8E8E8;
+    display: flex;
+    height: 88vh;
+}

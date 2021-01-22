@@ -1,0 +1,60 @@
+<ng-template #projectView let-project="project">
+	<ng-template #link>
+		<i class='fa fa-facebook-square'></i>
+		&nbsp;
+		&nbsp;
+		&nbsp;
+		<i class='fa fa-twitter-square'></i>
+		&nbsp;
+		&nbsp;
+		&nbsp;
+		<i class='fa fa-instagram'></i>
+		&nbsp;
+		&nbsp;
+		&nbsp;
+		<i class='fa fa-youtube'></i>
+		&nbsp;
+	</ng-template>
+	<ng-template [ngTemplateOutlet]="link"></ng-template>
+</ng-template>
+
+<div class="new-header">
+	<div class="header-left">
+		<div *ngIf="view === ViewType.TABLET">
+			<a class="header-logo"></a>
+		</div>
+		<div *ngIf="view === ViewType.MOBILE">
+			<div class="nav-hamburger" (click)="expandMenu.emit()">
+				<span class="line"></span>
+				<span class="line"></span>
+				<span class="line"></span>
+			</div>
+		</div>
+		<div *ngIf="view !== ViewType.DESKTOP">
+			<a class="header-logo"
+			   [ngStyle]="{'width' : view === ViewType.MOBILE ? '21px' : '125px', 'margin-left' : view === ViewType.TABLET ? '20px' : '0'}">
+				<img src="assets/large.png">
+			</a>
+		</div>
+	</div>
+	
+	<nav class="header-projects">
+		<ng-template *ngFor="let project of projects"
+					 [ngTemplateOutlet]="projectView"
+					 [ngTemplateOutletContext]="{project: project}">
+		</ng-template>
+	</nav>
+	
+</div>
+<div *ngIf="view !== ViewType.DESKTOP" class="side-menu" [ngStyle]="{'width': expanded ? '265px' : '0'}">
+	<div class="side-menu-header">
+		<i class="fal fa-times" (click)="close()"></i>
+		<div>Pavle</div>
+	</div>
+	<div class="side-menu-list">
+		<ng-template *ngFor="let project of projects"
+					 [ngTemplateOutlet]="projectView"
+					 [ngTemplateOutletContext]="{project: project}">
+		</ng-template>
+	</div>
+</div>
