@@ -26,7 +26,7 @@ namespace ExtraBlog.Controllers
         }
 
         //GET api/<DocumentController>
-        [HttpGet]
+        [HttpGet("all")]
         public async Task<IActionResult> GetAllDocuments()
         {
             return new JsonResult(await _context.Cypher.Match("(n:Document)")
@@ -114,7 +114,7 @@ namespace ExtraBlog.Controllers
             parseArg(category, out string categories);
             await _context.Cypher.Match("(d:Document), (c:Category)")
                                  .Where($"NOT(d.isArchived AND c.isArchived) AND d.name =~ '{documentname}' AND c.name IN [{categories}]")
-                                 .Merge("(d)-[r: TAG]->(n)")
+                                 .Merge("(d)-[r: TAG]->(c)")
                                  .ExecuteWithoutResultsAsync();
         }
 
